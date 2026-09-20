@@ -1,0 +1,51 @@
+name: Build AutoWiFi IPA
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: macos-15
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Show Xcode version
+        run: xcodebuild -version
+
+      - name: Build unsigned iPhone app
+        run: |
+          set -e
+          xcodebuild \
+            -project AutoWiFi/AutoWiFi.xcodeproj \
+            -scheme AutoWiFi \
+            -configuration Release \
+            -sdk iphoneos \
+            -derivedDataPath build \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY=""
+
+      - name: Package unsigned IPA
+        run: |
+          set -e
+          APP_PATH="$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' -type d | head -n 1)"
+          test -n "$APP_PATH"
+
+          rm -rf Payload unsigned_ipa
+          mkdir -p Payload unsigned_ipa
+          cp -R "$APP_PATH" Payload/
+
+          /usr/bin/zip -qry unsigned_ipa/AutoWiFi-unsigned.ipa Payload
+
+          echo "Created:"
+          ls -lh unsigned_ipa/AutoWiFi-unsigned.ipa
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: AutoWiFi-IPA
+          path: unsigned_ipa/AutoWiFi-unsigned.ipa
+          if-no-files-found: error
+          retention-days: 30
