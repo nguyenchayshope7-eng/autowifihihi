@@ -5,18 +5,18 @@ on:
 
 jobs:
   build:
-    runs-on: macos-15
+    runs-on: macos-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@v4
 
-      - name: Show Xcode version
-        run: xcodebuild -version
-
-      - name: Build unsigned iPhone app
+      - name: Show project files
         run: |
-          set -e
+          find AutoWiFi -maxdepth 3 -type f | sort
+
+      - name: Build iOS App
+        run: |
           xcodebuild \
             -project AutoWiFi/AutoWiFi.xcodeproj \
             -scheme AutoWiFi \
@@ -25,27 +25,132 @@ jobs:
             -derivedDataPath build \
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
-            CODE_SIGN_IDENTITY=""
+            CODE_SIGN_IDENTITY="" \
+            PRODUCT_BUNDLE_IDENTIFIER=com.nguyenchayshope7.autowifi \
+            CODE_SIGN_ENTITLEMENTS=AutoWiFi/AutoWiFi.entitlements
 
-      - name: Package unsigned IPA
+      - name: Check Hotspot Entitlement
         run: |
-          set -e
-          APP_PATH="$(find build/Build/Products/Release-iphoneos -maxdepth 1 -name '*.app' -type d | head -n 1)"
-          test -n "$APP_PATH"
+          APP="build/Build/Products/Release-iphoneos/AutoWiFi.app"
 
-          rm -rf Payload unsigned_ipa
-          mkdir -p Payload unsigned_ipa
-          cp -R "$APP_PATH" Payload/
+          echo "===== CHECK APP ====="
+          ls -la "$APP"
 
-          /usr/bin/zip -qry unsigned_ipa/AutoWiFi-unsigned.ipa Payload
+          echo "===== CHECK ENTITLEMENTS FILE ====="
 
-          echo "Created:"
-          ls -lh unsigned_ipa/AutoWiFi-unsigned.ipa
+          if [ -f "$APP/archived-expanded-entitlements.xcent" ]; then
+            echo "Entitlement file found"
+
+            /usr/libexec/PlistBuddy \
+              -c "Print :com.apple.developer.networking.HotspotConfiguration" \
+              "$APP/archived-expanded-entitlements.xcent" || true
+          else
+            echo "WARNING: archived-expanded-entitlements.xcent not found"
+          fi
+
+      - name: Fix App Info.plist
+        run: |
+          APP="build/Build/Products/Release-iphoneos/AutoWiFi.app"
+          PLIST="$APP/Info.plist"
+
+          echo "Fixing Info.plist..."
+
+          /usr/libexec/PlistBuddy \
+            -c "Delete :CFBundleIdentifier" \
+            "$PLIST" 2>/dev/null || true
+
+          /usr/libexec/PlistBuddy \
+            -c "Add :CFBundleIdentifier string com.nguyenchayshope7.autowifi" \
+            "$PLIST"
+
+          /usr/libexec/PlistBuddy \
+            -c "Delete :CFBundleExecutable" \
+            "$PLIST" 2>/dev/null || true
+
+          /usr/libexec/PlistBuddy \
+            -c "Add :CFBundleExecutable string AutoWiFi" \
+            "$PLIST"
+
+          /usr/libexec/PlistBuddy \
+            -c "Delete :CFBundleShortVersionString" \
+            "$PLIST" 2>/dev/null || true
+
+          /usr/libexec/PlistBuddy \
+            -c "Add :CFBundleShortVersionString string 1.0" \
+            "$PLIST"
+
+          /usr/libexec/PlistBuddy \
+            -c "Delete :CFBundleVersion" \
+            "$PLIST" 2>/dev/null || true
+
+          /usr/libexec/PlistBuddy \
+            -c "Add :CFBundleVersion string 1" \
+            "$PLIST"
+
+          echo "===== APP INFO ====="
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleIdentifier" \
+            "$PLIST"
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleExecutable" \
+            "$PLIST"
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleShortVersionString" \
+            "$PLIST"
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleVersion" \
+            "$PLIST"
+
+      - name: Check executable
+        run: |
+          APP="build/Build/Products/Release-iphoneos/AutoWiFi.app"
+
+          echo "Checking executable..."
+
+          ls -lh "$APP/AutoWiFi"
+
+          test -f "$APP/AutoWiFi"
+
+          echo "Executable OK"
+
+      - name: Create IPA
+        run: |
+          rm -rf Payload AutoWiFi.ipa
+
+          mkdir Payload
+
+          cp -R \
+            build/Build/Products/Release-iphoneos/AutoWiFi.app \
+            Payload/AutoWiFi.app
+
+          zip -r AutoWiFi.ipa Payload
+
+      - name: Verify IPA
+        run: |
+          echo "Checking IPA..."
+
+          unzip -l AutoWiFi.ipa
+
+          unzip -p AutoWiFi.ipa \
+            Payload/AutoWiFi.app/Info.plist \
+            > /tmp/Info.plist
+
+          echo "===== IPA INFO ====="
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleIdentifier" \
+            /tmp/Info.plist
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleExecutable" \
+            /tmp/Info.plist
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
         with:
           name: AutoWiFi-IPA
-          path: unsigned_ipa/AutoWiFi-unsigned.ipa
-          if-no-files-found: error
-          retention-days: 30
+          path: AutoWiFi.ipa
