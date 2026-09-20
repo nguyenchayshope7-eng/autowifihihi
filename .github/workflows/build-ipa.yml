@@ -28,7 +28,7 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             PRODUCT_BUNDLE_IDENTIFIER=com.nguyenchayshope7.autowifi
 
-      - name: Fix Bundle Identifier
+           - name: Fix App Info.plist
         run: |
           APP="build/Build/Products/Release-iphoneos/AutoWiFi.app"
           PLIST="$APP/Info.plist"
@@ -43,9 +43,46 @@ jobs:
             -c "Add :CFBundleIdentifier string com.nguyenchayshope7.autowifi" \
             "$PLIST"
 
-          echo "Bundle Identifier:"
+          /usr/libexec/PlistBuddy \
+            -c "Delete :CFBundleExecutable" \
+            "$PLIST" 2>/dev/null || true
+
+          /usr/libexec/PlistBuddy \
+            -c "Add :CFBundleExecutable string AutoWiFi" \
+            "$PLIST"
+
+          /usr/libexec/PlistBuddy \
+            -c "Delete :CFBundleShortVersionString" \
+            "$PLIST" 2>/dev/null || true
+
+          /usr/libexec/PlistBuddy \
+            -c "Add :CFBundleShortVersionString string 1.0" \
+            "$PLIST"
+
+          /usr/libexec/PlistBuddy \
+            -c "Delete :CFBundleVersion" \
+            "$PLIST" 2>/dev/null || true
+
+          /usr/libexec/PlistBuddy \
+            -c "Add :CFBundleVersion string 1" \
+            "$PLIST"
+
+          echo "===== APP INFO ====="
+
           /usr/libexec/PlistBuddy \
             -c "Print :CFBundleIdentifier" \
+            "$PLIST"
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleExecutable" \
+            "$PLIST"
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleShortVersionString" \
+            "$PLIST"
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleVersion" \
             "$PLIST"
 
       - name: Create IPA
