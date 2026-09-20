@@ -28,7 +28,7 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             PRODUCT_BUNDLE_IDENTIFIER=com.nguyenchayshope7.autowifi
 
-           - name: Fix App Info.plist
+      - name: Fix App Info.plist
         run: |
           APP="build/Build/Products/Release-iphoneos/AutoWiFi.app"
           PLIST="$APP/Info.plist"
@@ -85,9 +85,22 @@ jobs:
             -c "Print :CFBundleVersion" \
             "$PLIST"
 
+      - name: Check executable
+        run: |
+          APP="build/Build/Products/Release-iphoneos/AutoWiFi.app"
+
+          echo "Checking executable..."
+
+          ls -lh "$APP/AutoWiFi"
+
+          test -f "$APP/AutoWiFi"
+
+          echo "Executable OK"
+
       - name: Create IPA
         run: |
           rm -rf Payload AutoWiFi.ipa
+
           mkdir Payload
 
           cp -R \
@@ -99,12 +112,21 @@ jobs:
       - name: Verify IPA
         run: |
           echo "Checking IPA..."
+
+          unzip -l AutoWiFi.ipa
+
           unzip -p AutoWiFi.ipa \
             Payload/AutoWiFi.app/Info.plist \
             > /tmp/Info.plist
 
+          echo "===== IPA INFO ====="
+
           /usr/libexec/PlistBuddy \
             -c "Print :CFBundleIdentifier" \
+            /tmp/Info.plist
+
+          /usr/libexec/PlistBuddy \
+            -c "Print :CFBundleExecutable" \
             /tmp/Info.plist
 
       - name: Upload IPA
