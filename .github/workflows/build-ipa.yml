@@ -15,6 +15,20 @@ jobs:
         run: |
           find AutoWiFi -maxdepth 3 -type f | sort
 
+      - name: Check Entitlements File
+        run: |
+          ENTITLEMENTS="AutoWiFi/AutoWiFi.entitlements"
+
+          echo "===== CHECK ENTITLEMENTS FILE ====="
+
+          if [ -f "$ENTITLEMENTS" ]; then
+            echo "Entitlements file found:"
+            cat "$ENTITLEMENTS"
+          else
+            echo "ERROR: Entitlements file not found!"
+            exit 1
+          fi
+
       - name: Build iOS App
         run: |
           xcodebuild \
@@ -26,14 +40,37 @@ jobs:
             CODE_SIGNING_ALLOWED=NO \
             CODE_SIGNING_REQUIRED=NO \
             CODE_SIGN_IDENTITY="" \
-            PRODUCT_BUNDLE_IDENTIFIER=com.nguyenchayshope7.autowifi
+            PRODUCT_BUNDLE_IDENTIFIER=com.nguyenchayshope7.autowifi \
+            CODE_SIGN_ENTITLEMENTS=AutoWiFi/AutoWiFi.entitlements
+
+      - name: Check Hotspot Entitlement
+        run: |
+          APP="build/Build/Products/Release-iphoneos/AutoWiFi.app"
+
+          echo "===== CHECK APP ====="
+
+          ls -la "$APP"
+
+          echo ""
+          echo "===== CHECK ENTITLEMENTS ====="
+
+          if [ -f "$APP/archived-expanded-entitlements.xcent" ]; then
+            echo "Entitlement file found."
+
+            /usr/libexec/PlistBuddy \
+              -c "Print :com.apple.developer.networking.HotspotConfiguration" \
+              "$APP/archived-expanded-entitlements.xcent" || true
+          else
+            echo "WARNING: archived-expanded-entitlements.xcent not found."
+            echo "This can happen because the GitHub build is unsigned."
+          fi
 
       - name: Fix App Info.plist
         run: |
           APP="build/Build/Products/Release-iphoneos/AutoWiFi.app"
           PLIST="$APP/Info.plist"
 
-          echo "Fixing Info.plist..."
+          echo "===== FIXING INFO.PLIST ====="
 
           /usr/libexec/PlistBuddy \
             -c "Delete :CFBundleIdentifier" \
@@ -67,20 +104,28 @@ jobs:
             -c "Add :CFBundleVersion string 1" \
             "$PLIST"
 
+          echo ""
           echo "===== APP INFO ====="
 
+          echo "Bundle Identifier:"
           /usr/libexec/PlistBuddy \
             -c "Print :CFBundleIdentifier" \
             "$PLIST"
 
+          echo ""
+          echo "Bundle Executable:"
           /usr/libexec/PlistBuddy \
             -c "Print :CFBundleExecutable" \
             "$PLIST"
 
+          echo ""
+          echo "Version:"
           /usr/libexec/PlistBuddy \
             -c "Print :CFBundleShortVersionString" \
             "$PLIST"
 
+          echo ""
+          echo "Build:"
           /usr/libexec/PlistBuddy \
             -c "Print :CFBundleVersion" \
             "$PLIST"
@@ -89,16 +134,18 @@ jobs:
         run: |
           APP="build/Build/Products/Release-iphoneos/AutoWiFi.app"
 
-          echo "Checking executable..."
+          echo "===== CHECK EXECUTABLE ====="
 
           ls -lh "$APP/AutoWiFi"
 
           test -f "$APP/AutoWiFi"
 
-          echo "Executable OK"
+          echo "Executable OK."
 
       - name: Create IPA
         run: |
+          echo "===== CREATE IPA ====="
+
           rm -rf Payload AutoWiFi.ipa
 
           mkdir Payload
@@ -109,9 +156,13 @@ jobs:
 
           zip -r AutoWiFi.ipa Payload
 
+          echo ""
+          echo "IPA created:"
+          ls -lh AutoWiFi.ipa
+
       - name: Verify IPA
         run: |
-          echo "Checking IPA..."
+          echo "===== VERIFY IPA ====="
 
           unzip -l AutoWiFi.ipa
 
@@ -119,15 +170,24 @@ jobs:
             Payload/AutoWiFi.app/Info.plist \
             > /tmp/Info.plist
 
+          echo ""
           echo "===== IPA INFO ====="
 
+          echo "Bundle Identifier:"
           /usr/libexec/PlistBuddy \
             -c "Print :CFBundleIdentifier" \
             /tmp/Info.plist
 
+          echo ""
+          echo "Bundle Executable:"
           /usr/libexec/PlistBuddy \
             -c "Print :CFBundleExecutable" \
             /tmp/Info.plist
+
+          echo ""
+          echo "===== IPA STRUCTURE ====="
+
+          unzip -l AutoWiFi.ipa | grep "Payload/AutoWiFi.app/"
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
