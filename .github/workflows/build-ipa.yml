@@ -28,23 +28,47 @@ jobs:
             CODE_SIGN_IDENTITY="" \
             PRODUCT_BUNDLE_IDENTIFIER=com.nguyenchayshope7.autowifi
 
-      - name: Check Bundle Identifier
+      - name: Fix Bundle Identifier
         run: |
-          echo "Checking app bundle..."
+          APP="build/Build/Products/Release-iphoneos/AutoWiFi.app"
+          PLIST="$APP/Info.plist"
+
+          echo "Fixing Info.plist..."
+
+          /usr/libexec/PlistBuddy \
+            -c "Delete :CFBundleIdentifier" \
+            "$PLIST" 2>/dev/null || true
+
+          /usr/libexec/PlistBuddy \
+            -c "Add :CFBundleIdentifier string com.nguyenchayshope7.autowifi" \
+            "$PLIST"
+
+          echo "Bundle Identifier:"
           /usr/libexec/PlistBuddy \
             -c "Print :CFBundleIdentifier" \
-            build/Build/Products/Release-iphoneos/AutoWiFi.app/Info.plist
+            "$PLIST"
 
       - name: Create IPA
         run: |
-          mkdir -p Payload
-          cp -R build/Build/Products/Release-iphoneos/AutoWiFi.app Payload/
+          rm -rf Payload AutoWiFi.ipa
+          mkdir Payload
+
+          cp -R \
+            build/Build/Products/Release-iphoneos/AutoWiFi.app \
+            Payload/AutoWiFi.app
+
+          zip -r AutoWiFi.ipa Payload
+
+      - name: Verify IPA
+        run: |
+          echo "Checking IPA..."
+          unzip -p AutoWiFi.ipa \
+            Payload/AutoWiFi.app/Info.plist \
+            > /tmp/Info.plist
 
           /usr/libexec/PlistBuddy \
             -c "Print :CFBundleIdentifier" \
-            Payload/AutoWiFi.app/Info.plist
-
-          zip -r AutoWiFi.ipa Payload
+            /tmp/Info.plist
 
       - name: Upload IPA
         uses: actions/upload-artifact@v4
