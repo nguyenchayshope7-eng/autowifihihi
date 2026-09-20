@@ -7,7 +7,7 @@
   111111111111111111111111 /* AutoWiFiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoWiFiApp.swift; sourceTree = "<group>";};
   222222222222222222222222 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>";};
   333333333333333333333333 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>";};
-  444444444444444444444444 /* AutoWiFi */ = {isa = PBXGroup; children = (111111111111111111111111,222222222222222222222222,333333333333333333333333); path = AutoWiFi; sourceTree = "<group>";};
+  444444444444444444444444 /* AutoWiFi */ = {isa = PBXGroup; children = (111111111111111111111111,222222222222222222222222,333333333333333333333333); path = ""; sourceTree = "<group>";};
   555555555555555555555555 /* Products */ = {isa = PBXGroup; children = (666666666666666666666666); name = Products; sourceTree = "<group>";};
   666666666666666666666666 /* AutoWiFi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = AutoWiFi.app; sourceTree = BUILT_PRODUCTS_DIR;};
   777777777777777777777777 /* PBXProject */ = {isa = PBXProject; buildConfigurationList = 888888888888888888888888; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base); mainGroup = 999999999999999999999999; productRefGroup = 555555555555555555555555; projectDirPath = ""; projectRoot = ""; targets = (AAAAAAAAAAAAAAAAAAAAAAAA);};
