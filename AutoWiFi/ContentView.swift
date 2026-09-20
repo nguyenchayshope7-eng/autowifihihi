@@ -68,13 +68,22 @@ struct ContentView: View {
 
     @ViewBuilder
     private var wifiListView: some View {
-        if profiles.isEmpty {
-            ContentUnavailableView(
-                "Chưa có Wi-Fi",
-                systemImage: "wifi.slash",
-                description: Text("Nhấn dấu + để thêm mạng Wi-Fi.")
-            )
-        } else {
+       if profiles.isEmpty {
+    VStack(spacing: 10) {
+        Image(systemName: "wifi.slash")
+            .font(.system(size: 40))
+            .foregroundStyle(.secondary)
+
+        Text("Chưa có Wi-Fi")
+            .font(.headline)
+
+        Text("Nhấn dấu + để thêm mạng Wi-Fi.")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+    }
+    .frame(maxWidth: .infinity)
+    .padding()
+} else {
             List {
                 Section("Wi-Fi đã lưu") {
                     ForEach(profiles) { profile in
