@@ -1,0 +1,28 @@
+// !$*UTF8*$!
+{
+ archiveVersion = 1;
+ classes = {};
+ objectVersion = 56;
+ objects = {
+  111111111111111111111111 /* AutoWiFiApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AutoWiFiApp.swift; sourceTree = "<group>";};
+  222222222222222222222222 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>";};
+  333333333333333333333333 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>";};
+  444444444444444444444444 /* AutoWiFi */ = {isa = PBXGroup; children = (111111111111111111111111,222222222222222222222222,333333333333333333333333); path = AutoWiFi; sourceTree = "<group>";};
+  555555555555555555555555 /* Products */ = {isa = PBXGroup; children = (666666666666666666666666); name = Products; sourceTree = "<group>";};
+  666666666666666666666666 /* AutoWiFi.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; path = AutoWiFi.app; sourceTree = BUILT_PRODUCTS_DIR;};
+  777777777777777777777777 /* PBXProject */ = {isa = PBXProject; buildConfigurationList = 888888888888888888888888; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0; knownRegions = (en, Base); mainGroup = 999999999999999999999999; productRefGroup = 555555555555555555555555; projectDirPath = ""; projectRoot = ""; targets = (AAAAAAAAAAAAAAAAAAAAAAAA);};
+  999999999999999999999999 = {isa = PBXGroup; children = (444444444444444444444444,555555555555555555555555); sourceTree = "<group>";};
+  BBBBBBBBBBBBBBBBBBBBBBBB /* Sources */ = {isa = PBXSourcesBuildPhase; files = (CCCCCCCCCCCCCCCCCCCCCCCC,DDDDDDDDDDDDDDDDDDDDDDDD);};
+  CCCCCCCCCCCCCCCCCCCCCCCC = {isa = PBXBuildFile; fileRef = 111111111111111111111111;};
+  DDDDDDDDDDDDDDDDDDDDDDDD = {isa = PBXBuildFile; fileRef = 222222222222222222222222;};
+  AAAAAAAAAAAAAAAAAAAAAAAA = {isa = PBXNativeTarget; buildConfigurationList = EEEEEEEEEEEEEEEEEEEEEEEE; buildPhases = (BBBBBBBBBBBBBBBBBBBBBBBB,FFFFFFFFFFFFFFFFFFFFFFFF); buildRules = (); dependencies = (); name = AutoWiFi; productName = AutoWiFi; productReference = 666666666666666666666666; productType = "com.apple.product-type.application";};
+  FFFFFFFFFFFFFFFFFFFFFFFF = {isa = PBXResourcesBuildPhase; files = ();};
+  888888888888888888888888 = {isa = XCConfigurationList; buildConfigurations = (121212121212121212121212,131313131313131313131313); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
+  EEEEEEEEEEEEEEEEEEEEEEEE = {isa = XCConfigurationList; buildConfigurations = (141414141414141414141414,151515151515151515151515); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release;};
+  121212121212121212121212 = {isa = XCBuildConfiguration; buildSettings = {PRODUCT_NAME = AutoWiFi; SWIFT_VERSION = 5.0; IPHONEOS_DEPLOYMENT_TARGET = 16.0;}; name = Debug;};
+  131313131313131313131313 = {isa = XCBuildConfiguration; buildSettings = {PRODUCT_NAME = AutoWiFi; SWIFT_VERSION = 5.0; IPHONEOS_DEPLOYMENT_TARGET = 16.0;}; name = Release;};
+  141414141414141414141414 = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; INFOPLIST_FILE = AutoWiFi/Info.plist; PRODUCT_BUNDLE_IDENTIFIER = com.example.AutoWiFi; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; IPHONEOS_DEPLOYMENT_TARGET = 16.0; TARGETED_DEVICE_FAMILY = "1,2";}; name = Debug;};
+  151515151515151515151515 = {isa = XCBuildConfiguration; buildSettings = {ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon; INFOPLIST_FILE = AutoWiFi/Info.plist; PRODUCT_BUNDLE_IDENTIFIER = com.example.AutoWiFi; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; IPHONEOS_DEPLOYMENT_TARGET = 16.0; TARGETED_DEVICE_FAMILY = "1,2";}; name = Release;};
+ };
+ rootObject = 777777777777777777777777;
+}
