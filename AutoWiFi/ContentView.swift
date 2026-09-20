@@ -2,183 +2,291 @@ import SwiftUI
 import NetworkExtension
 
 struct WiFiProfile: Identifiable, Codable, Equatable {
-    var id = UUID()
+    var id: UUID
     var name: String
     var password: String
+
+    init(
+        id: UUID = UUID(),
+        name: String,
+        password: String
+    ) {
+        self.id = id
+        self.name = name
+        self.password = password
+    }
 }
 
 struct ContentView: View {
+
     @State private var profiles: [WiFiProfile] = []
-    @State private var selectedID: UUID?
+
+    @State private var showAddWiFi = false
+    @State private var editingProfile: WiFiProfile?
+
     @State private var status = "Sẵn sàng"
-    @State private var showAdd = false
+    @State private var connectingID: UUID?
 
     private let storageKey = "wifi_profiles"
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 18) {
-                headerView
 
-                wifiListView
+            VStack(spacing: 0) {
 
-                connectButton
+                header
+
+                if profiles.isEmpty {
+                    emptyView
+                } else {
+                    wifiList
+                }
+
+                Spacer()
 
                 statusView
 
-                Spacer()
+                addButton
             }
-            .padding(.horizontal)
-            .navigationTitle("Auto WiFi")
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showAdd = true
-                    } label: {
-                        Image(systemName: "plus")
-                    }
-                }
-            }
-            .sheet(isPresented: $showAdd) {
+            .background(Color(.systemGroupedBackground))
+            .navigationBarHidden(true)
+
+            .sheet(isPresented: $showAddWiFi) {
                 AddWiFiView { name, password in
-                    addProfile(name: name, password: password)
+
+                    addWiFi(
+                        name: name,
+                        password: password
+                    )
+
+                    showAddWiFi = false
                 }
-                .presentationDetents([.medium])
             }
+
+            .sheet(item: $editingProfile) { profile in
+
+                EditWiFiView(
+                    profile: profile
+                ) { name, password in
+
+                    updateWiFi(
+                        profile: profile,
+                        name: name,
+                        password: password
+                    )
+
+                    editingProfile = nil
+                }
+            }
+
             .onAppear {
                 loadProfiles()
             }
         }
     }
 
-    private var headerView: some View {
-        VStack(spacing: 6) {
+    // MARK: - Header
+
+    private var header: some View {
+
+        VStack(spacing: 8) {
+
             Image(systemName: "wifi")
-                .font(.system(size: 54))
+                .font(.system(size: 46))
                 .foregroundStyle(.blue)
 
-            Text("AUTO WIFI")
-                .font(.largeTitle.bold())
+            Text("AutoWiFi")
+                .font(.system(size: 30, weight: .bold))
 
-            Text("Kết nối nhanh Wi-Fi đã lưu")
+            Text("Kết nối Wi-Fi nhanh")
+                .font(.subheadline)
                 .foregroundStyle(.secondary)
+
         }
-        .padding(.top, 20)
+        .frame(maxWidth: .infinity)
+        .padding(.top, 25)
+        .padding(.bottom, 20)
+        .background(Color(.systemBackground))
     }
 
-    @ViewBuilder
-    private var wifiListView: some View {
-       if profiles.isEmpty {
-    VStack(spacing: 10) {
-        Image(systemName: "wifi.slash")
-            .font(.system(size: 40))
-            .foregroundStyle(.secondary)
+    // MARK: - Empty
 
-        Text("Chưa có Wi-Fi")
-            .font(.headline)
+    private var emptyView: some View {
 
-        Text("Nhấn dấu + để thêm mạng Wi-Fi.")
-            .font(.subheadline)
-            .foregroundStyle(.secondary)
-    }
-    .frame(maxWidth: .infinity)
-    .padding()
-} else {
-            List {
-                Section("Wi-Fi đã lưu") {
-                    ForEach(profiles) { profile in
-                        wifiRow(profile)
-                    }
-                    .onDelete(perform: delete)
-                }
-            }
-            .listStyle(.insetGrouped)
-            .frame(maxHeight: 280)
+        VStack(spacing: 15) {
+
+            Spacer()
+
+            Image(systemName: "wifi.slash")
+                .font(.system(size: 55))
+                .foregroundStyle(.secondary)
+
+            Text("Chưa có Wi-Fi")
+                .font(.title3.bold())
+
+            Text("Thêm Wi-Fi một lần.\nSau đó chỉ cần bấm để kết nối.")
+                .multilineTextAlignment(.center)
+                .foregroundStyle(.secondary)
+
+            Spacer()
         }
+        .frame(maxWidth: .infinity)
     }
 
-    private func wifiRow(_ profile: WiFiProfile) -> some View {
-        Button {
-            selectedID = profile.id
-        } label: {
-            HStack {
-                Image(
-                    systemName: selectedID == profile.id
-                    ? "checkmark.circle.fill"
-                    : "wifi"
-                )
-                .foregroundStyle(
-                    selectedID == profile.id ? .blue : .primary
-                )
+    // MARK: - WiFi List
 
-                VStack(alignment: .leading, spacing: 3) {
-                    Text(profile.name)
-                        .foregroundStyle(.primary)
+    private var wifiList: some View {
 
-                    Text(
-                        selectedID == profile.id
-                        ? "Đã chọn"
-                        : "Nhấn để chọn"
+        List {
+
+            Section {
+
+                ForEach(profiles) { profile in
+
+                    WiFiRow(
+                        profile: profile,
+                        isConnecting: connectingID == profile.id,
+                        onConnect: {
+                            connect(profile)
+                        },
+                        onEdit: {
+                            editingProfile = profile
+                        },
+                        onDelete: {
+                            delete(profile)
+                        }
                     )
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
                 }
+            } header: {
 
-                Spacer()
+                Text("Wi-Fi đã lưu")
+                    .font(.headline)
+                    .foregroundStyle(.primary)
             }
         }
+        .listStyle(.insetGrouped)
     }
 
-    private var connectButton: some View {
-        Button {
-            connectSelected()
-        } label: {
-            Label("KẾT NỐI WIFI", systemImage: "wifi")
-                .font(.headline)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 14)
-        }
-        .buttonStyle(.borderedProminent)
-        .disabled(selectedProfile == nil)
-    }
+    // MARK: - Status
 
     private var statusView: some View {
+
         Text(status)
             .font(.subheadline)
-            .foregroundStyle(
-                status.hasPrefix("Lỗi") ? .red : .secondary
-            )
             .multilineTextAlignment(.center)
-            .padding(.horizontal)
+            .foregroundStyle(
+                status.hasPrefix("Lỗi")
+                ? .red
+                : .secondary
+            )
+            .padding(.horizontal, 20)
+            .padding(.bottom, 10)
     }
 
-    private var selectedProfile: WiFiProfile? {
-        profiles.first {
-            $0.id == selectedID
+    // MARK: - Add Button
+
+    private var addButton: some View {
+
+        Button {
+
+            showAddWiFi = true
+
+        } label: {
+
+            Label(
+                "THÊM WI-FI",
+                systemImage: "plus"
+            )
+            .font(.headline)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 15)
         }
+        .buttonStyle(.borderedProminent)
+        .padding(.horizontal, 20)
+        .padding(.bottom, 20)
     }
 
-    private func addProfile(name: String, password: String) {
+    // MARK: - Add WiFi
+
+    private func addWiFi(
+        name: String,
+        password: String
+    ) {
+
+        let cleanName = name.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        guard !cleanName.isEmpty else {
+            return
+        }
+
         let profile = WiFiProfile(
-            name: name,
+            name: cleanName,
             password: password
         )
 
         profiles.append(profile)
-        selectedID = profile.id
+
         saveProfiles()
 
-        status = "Đã lưu \(name)"
-        showAdd = false
+        status = "Đã lưu Wi-Fi \(cleanName)"
     }
 
-    private func connectSelected() {
-        guard let profile = selectedProfile else {
-            status = "Lỗi: Chưa chọn Wi-Fi"
+    // MARK: - Update
+
+    private func updateWiFi(
+        profile: WiFiProfile,
+        name: String,
+        password: String
+    ) {
+
+        let cleanName = name.trimmingCharacters(
+            in: .whitespacesAndNewlines
+        )
+
+        guard !cleanName.isEmpty else {
             return
         }
 
-        status = "Đang yêu cầu kết nối \(profile.name)…"
+        guard let index = profiles.firstIndex(
+            where: { $0.id == profile.id }
+        ) else {
+            return
+        }
+
+        profiles[index].name = cleanName
+        profiles[index].password = password
+
+        saveProfiles()
+
+        status = "Đã cập nhật \(cleanName)"
+    }
+
+    // MARK: - Delete
+
+    private func delete(
+        _ profile: WiFiProfile
+    ) {
+
+        profiles.removeAll {
+            $0.id == profile.id
+        }
+
+        saveProfiles()
+
+        status = "Đã xóa \(profile.name)"
+    }
+
+    // MARK: - Connect
+
+    private func connect(
+        _ profile: WiFiProfile
+    ) {
+
+        connectingID = profile.id
+
+        status = "Đang kết nối \(profile.name)…"
 
         let configuration = NEHotspotConfiguration(
             ssid: profile.name,
@@ -188,38 +296,35 @@ struct ContentView: View {
 
         configuration.joinOnce = false
 
-        NEHotspotConfigurationManager.shared.apply(configuration) {
-            error in
+        NEHotspotConfigurationManager.shared.apply(
+            configuration
+        ) { error in
 
             DispatchQueue.main.async {
+
+                connectingID = nil
+
                 if let error = error {
-                    status = "Lỗi: \(error.localizedDescription)"
-                } else {
+
                     status =
-                        "Đã gửi yêu cầu kết nối \(profile.name). iOS có thể hiện hộp thoại xác nhận."
+                        "Lỗi: \(error.localizedDescription)"
+
+                } else {
+
+                    status =
+                        "Đã gửi yêu cầu kết nối \(profile.name)"
                 }
             }
         }
     }
 
-    private func delete(at offsets: IndexSet) {
-        profiles.remove(atOffsets: offsets)
-
-        if let selectedID {
-            let exists = profiles.contains {
-                $0.id == selectedID
-            }
-
-            if !exists {
-                self.selectedID = profiles.first?.id
-            }
-        }
-
-        saveProfiles()
-    }
+    // MARK: - Save
 
     private func saveProfiles() {
-        guard let data = try? JSONEncoder().encode(profiles) else {
+
+        guard let data = try? JSONEncoder().encode(
+            profiles
+        ) else {
             return
         }
 
@@ -229,37 +334,167 @@ struct ContentView: View {
         )
     }
 
+    // MARK: - Load
+
     private func loadProfiles() {
-        guard let data = UserDefaults.standard.data(
-            forKey: storageKey
-        ) else {
+
+        guard let data =
+            UserDefaults.standard.data(
+                forKey: storageKey
+            )
+        else {
             return
         }
 
-        guard let saved = try? JSONDecoder().decode(
-            [WiFiProfile].self,
-            from: data
-        ) else {
+        guard let saved =
+            try? JSONDecoder().decode(
+                [WiFiProfile].self,
+                from: data
+            )
+        else {
             return
         }
 
         profiles = saved
-        selectedID = saved.first?.id
     }
 }
 
-struct AddWiFiView: View {
-    let onSave: (String, String) -> Void
+// MARK: - WiFi Row
 
-    @Environment(\.dismiss) private var dismiss
+struct WiFiRow: View {
+
+    let profile: WiFiProfile
+    let isConnecting: Bool
+
+    let onConnect: () -> Void
+    let onEdit: () -> Void
+    let onDelete: () -> Void
+
+    var body: some View {
+
+        VStack(spacing: 12) {
+
+            Button {
+
+                onConnect()
+
+            } label: {
+
+                HStack(spacing: 14) {
+
+                    Image(systemName: "wifi")
+                        .font(.system(size: 24))
+                        .foregroundStyle(.blue)
+                        .frame(width: 35)
+
+                    VStack(
+                        alignment: .leading,
+                        spacing: 4
+                    ) {
+
+                        Text(profile.name)
+                            .font(.headline)
+                            .foregroundStyle(.primary)
+
+                        Text(
+                            isConnecting
+                            ? "Đang kết nối…"
+                            : "Nhấn để kết nối"
+                        )
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                    }
+
+                    Spacer()
+
+                    if isConnecting {
+
+                        ProgressView()
+
+                    } else {
+
+                        Image(
+                            systemName:
+                                "chevron.right"
+                        )
+                        .foregroundStyle(.secondary)
+                    }
+                }
+            }
+
+            HStack(spacing: 10) {
+
+                Button {
+
+                    onConnect()
+
+                } label: {
+
+                    Label(
+                        "Kết nối",
+                        systemImage: "wifi"
+                    )
+                    .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+
+                Button {
+
+                    onEdit()
+
+                } label: {
+
+                    Image(
+                        systemName: "gearshape"
+                    )
+                    .frame(width: 45)
+                }
+                .buttonStyle(.bordered)
+
+                Button {
+
+                    onDelete()
+
+                } label: {
+
+                    Image(
+                        systemName: "trash"
+                    )
+                    .frame(width: 45)
+                }
+                .buttonStyle(.bordered)
+                .tint(.red)
+            }
+        }
+        .padding(.vertical, 8)
+    }
+}
+
+// MARK: - Add WiFi
+
+struct AddWiFiView: View {
+
+    let onSave: (
+        String,
+        String
+    ) -> Void
+
+    @Environment(\.dismiss)
+    private var dismiss
 
     @State private var ssid = ""
     @State private var password = ""
 
     var body: some View {
+
         NavigationStack {
+
             Form {
-                Section("Thông tin Wi-Fi") {
+
+                Section(
+                    "Thông tin Wi-Fi"
+                ) {
+
                     TextField(
                         "Tên Wi-Fi (SSID)",
                         text: $ssid
@@ -274,30 +509,162 @@ struct AddWiFiView: View {
                 }
 
                 Section {
-                    Button("Lưu Wi-Fi") {
-                        let name = ssid
-                            .trimmingCharacters(
-                                in: .whitespacesAndNewlines
+
+                    Button {
+
+                        let name =
+                            ssid.trimmingCharacters(
+                                in:
+                                    .whitespacesAndNewlines
                             )
 
                         guard !name.isEmpty else {
                             return
                         }
 
-                        onSave(name, password)
+                        onSave(
+                            name,
+                            password
+                        )
+
+                    } label: {
+
+                        Text("Lưu Wi-Fi")
+                            .frame(
+                                maxWidth: .infinity
+                            )
                     }
-                    .disabled(
-                        ssid.trimmingCharacters(
-                            in: .whitespacesAndNewlines
-                        ).isEmpty
-                    )
                 }
             }
-            .navigationTitle("Thêm Wi-Fi")
+
+            .navigationTitle(
+                "Thêm Wi-Fi"
+            )
+
+            .navigationBarTitleDisplayMode(
+                .inline
+            )
+
             .toolbar {
+
                 ToolbarItem(
-                    placement: .topBarLeading
+                    placement:
+                        .topBarLeading
                 ) {
+
+                    Button("Hủy") {
+                        dismiss()
+                    }
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Edit WiFi
+
+struct EditWiFiView: View {
+
+    let profile: WiFiProfile
+
+    let onSave: (
+        String,
+        String
+    ) -> Void
+
+    @Environment(\.dismiss)
+    private var dismiss
+
+    @State private var ssid: String
+    @State private var password: String
+
+    init(
+        profile: WiFiProfile,
+        onSave: @escaping (
+            String,
+            String
+        ) -> Void
+    ) {
+
+        self.profile = profile
+        self.onSave = onSave
+
+        _ssid = State(
+            initialValue: profile.name
+        )
+
+        _password = State(
+            initialValue: profile.password
+        )
+    }
+
+    var body: some View {
+
+        NavigationStack {
+
+            Form {
+
+                Section(
+                    "Cấu hình Wi-Fi"
+                ) {
+
+                    TextField(
+                        "Tên Wi-Fi (SSID)",
+                        text: $ssid
+                    )
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+
+                    SecureField(
+                        "Mật khẩu",
+                        text: $password
+                    )
+                }
+
+                Section {
+
+                    Button {
+
+                        let name =
+                            ssid.trimmingCharacters(
+                                in:
+                                    .whitespacesAndNewlines
+                            )
+
+                        guard !name.isEmpty else {
+                            return
+                        }
+
+                        onSave(
+                            name,
+                            password
+                        )
+
+                    } label: {
+
+                        Text("Lưu thay đổi")
+                            .frame(
+                                maxWidth: .infinity
+                            )
+                    }
+                }
+            }
+
+            .navigationTitle(
+                "Đổi cấu hình"
+            )
+
+            .navigationBarTitleDisplayMode(
+                .inline
+            )
+
+            .toolbar {
+
+                ToolbarItem(
+                    placement:
+                        .topBarLeading
+                ) {
+
                     Button("Hủy") {
                         dismiss()
                     }
